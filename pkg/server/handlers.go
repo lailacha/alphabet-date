@@ -35,7 +35,12 @@ type Settings struct {
 func NewHandler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+		db := "ok"
+		if _, err := DB(r.Context()); err != nil {
+			log.Printf("health: %v", err)
+			db = "ko"
+		}
+		writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "db": db})
 	})
 	mux.HandleFunc("GET /api/me", handleMe)
 	mux.HandleFunc("POST /api/login", handleLogin)
@@ -363,7 +368,13 @@ func writeErr(w http.ResponseWriter, status int, msg string) {
 	writeJSON(w, status, map[string]string{"error": msg})
 }
 
+// serverErr is only used behind protected(), so the detail is shown to the
+// two logged-in users only; it makes setup problems (DB URL, network…)
+// diagnosable without digging through Vercel logs.
 func serverErr(w http.ResponseWriter, err error) {
 	log.Printf("error: %v", err)
-	writeErr(w, http.StatusInternalServerError, "erreur serveur")
+	writeJSON(w, http.StatusInternalServerError, map[string]string{
+		"error":  "erreur serveur",
+		"detail": err.Error(),
+	})
 }

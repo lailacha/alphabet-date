@@ -21,7 +21,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!res.ok) {
     let msg = `Erreur ${res.status}`
     try {
-      msg = (await res.json()).error ?? msg
+      const body = await res.json()
+      msg = body.error ?? msg
+      if (body.detail) msg += ` — ${body.detail}`
     } catch {
       /* not JSON */
     }
