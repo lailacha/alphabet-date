@@ -2,29 +2,12 @@ package server
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
-
-	"github.com/jackc/pgx/v5"
 )
-
-const maxPhotoBytes = 4 << 20 // Vercel functions accept bodies up to 4.5 MB
-
-type DateEntry struct {
-	Letter    string     `json:"letter"`
-	Idea      string     `json:"idea"`
-	Place     string     `json:"place"`
-	Notes     string     `json:"notes"`
-	DoneOn    *string    `json:"doneOn"`
-	Photos    [2]*string `json:"photos"` // versioned URLs for slot 1 and 2, nil if empty
-	UpdatedAt time.Time  `json:"updatedAt"`
-}
 
 type Settings struct {
 	Person1 string `json:"person1"`
@@ -46,11 +29,13 @@ func NewHandler() http.Handler {
 	mux.HandleFunc("POST /api/login", handleLogin)
 	mux.HandleFunc("POST /api/logout", handleLogout)
 
-	mux.Handle("GET /api/dates", protected(handleListDates))
-	mux.Handle("PUT /api/dates/{letter}", protected(handleUpdateDate))
-	mux.Handle("PUT /api/dates/{letter}/photos/{slot}", protected(handlePutPhoto))
-	mux.Handle("DELETE /api/dates/{letter}/photos/{slot}", protected(handleDeletePhoto))
-	mux.Handle("GET /api/photos/{letter}/{slot}", protected(handleGetPhoto))
+	mux.Handle("GET /api/entries", protected(handleListEntries))
+	mux.Handle("POST /api/entries", protected(handleCreateEntry))
+	mux.Handle("PUT /api/entries/{id}", protected(handleUpdateEntry))
+	mux.Handle("DELETE /api/entries/{id}", protected(handleDeleteEntry))
+	mux.Handle("PUT /api/entries/{id}/photos/{slot}", protected(handlePutPhoto))
+	mux.Handle("DELETE /api/entries/{id}/photos/{slot}", protected(handleDeletePhoto))
+	mux.Handle("GET /api/photos/{id}/{slot}", protected(handleGetPhoto))
 	mux.Handle("GET /api/settings", protected(handleGetSettings))
 	mux.Handle("PUT /api/settings", protected(handlePutSettings))
 
@@ -110,181 +95,6 @@ func handleLogout(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func handleListDates(w http.ResponseWriter, r *http.Request) {
-	db, err := DB(r.Context())
-	if err != nil {
-		serverErr(w, err)
-		return
-	}
-	rows, err := db.Query(r.Context(), `
-		SELECT d.letter, d.idea, d.place, d.notes, to_char(d.done_on, 'YYYY-MM-DD'), d.updated_at,
-		       (SELECT (extract(epoch FROM p.updated_at) * 1000)::bigint FROM photos p WHERE p.letter = d.letter AND p.slot = 1),
-		       (SELECT (extract(epoch FROM p.updated_at) * 1000)::bigint FROM photos p WHERE p.letter = d.letter AND p.slot = 2)
-		FROM dates d ORDER BY d.letter`)
-	if err != nil {
-		serverErr(w, err)
-		return
-	}
-	defer rows.Close()
-
-	out := []DateEntry{}
-	for rows.Next() {
-		var e DateEntry
-		var v1, v2 *int64
-		if err := rows.Scan(&e.Letter, &e.Idea, &e.Place, &e.Notes, &e.DoneOn, &e.UpdatedAt, &v1, &v2); err != nil {
-			serverErr(w, err)
-			return
-		}
-		e.Photos[0] = photoURL(e.Letter, 1, v1)
-		e.Photos[1] = photoURL(e.Letter, 2, v2)
-		out = append(out, e)
-	}
-	if err := rows.Err(); err != nil {
-		serverErr(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, out)
-}
-
-func photoURL(letter string, slot int, version *int64) *string {
-	if version == nil {
-		return nil
-	}
-	u := fmt.Sprintf("/api/photos/%s/%d?v=%d", letter, slot, *version)
-	return &u
-}
-
-func handleUpdateDate(w http.ResponseWriter, r *http.Request) {
-	letter, ok := parseLetter(w, r)
-	if !ok {
-		return
-	}
-	var body struct {
-		Idea   string  `json:"idea"`
-		Place  string  `json:"place"`
-		Notes  string  `json:"notes"`
-		DoneOn *string `json:"doneOn"`
-	}
-	if err := json.NewDecoder(io.LimitReader(r.Body, 64<<10)).Decode(&body); err != nil {
-		writeErr(w, http.StatusBadRequest, "requête invalide")
-		return
-	}
-	var doneOn *time.Time
-	if body.DoneOn != nil && *body.DoneOn != "" {
-		t, err := time.Parse("2006-01-02", *body.DoneOn)
-		if err != nil {
-			writeErr(w, http.StatusBadRequest, "date invalide (AAAA-MM-JJ)")
-			return
-		}
-		doneOn = &t
-	}
-	db, err := DB(r.Context())
-	if err != nil {
-		serverErr(w, err)
-		return
-	}
-	_, err = db.Exec(r.Context(),
-		`UPDATE dates SET idea = $2, place = $3, notes = $4, done_on = $5, updated_at = now() WHERE letter = $1`,
-		letter, strings.TrimSpace(body.Idea), strings.TrimSpace(body.Place), strings.TrimSpace(body.Notes), doneOn)
-	if err != nil {
-		serverErr(w, err)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func handlePutPhoto(w http.ResponseWriter, r *http.Request) {
-	letter, ok := parseLetter(w, r)
-	if !ok {
-		return
-	}
-	slot, ok := parseSlot(w, r)
-	if !ok {
-		return
-	}
-	data, err := io.ReadAll(io.LimitReader(r.Body, maxPhotoBytes+1))
-	if err != nil {
-		writeErr(w, http.StatusBadRequest, "lecture impossible")
-		return
-	}
-	if len(data) > maxPhotoBytes {
-		writeErr(w, http.StatusRequestEntityTooLarge, "photo trop lourde (4 Mo max)")
-		return
-	}
-	mime := http.DetectContentType(data)
-	if !strings.HasPrefix(mime, "image/") {
-		writeErr(w, http.StatusUnsupportedMediaType, "ce fichier n'est pas une image")
-		return
-	}
-	db, err := DB(r.Context())
-	if err != nil {
-		serverErr(w, err)
-		return
-	}
-	_, err = db.Exec(r.Context(), `
-		INSERT INTO photos (letter, slot, mime, data, updated_at) VALUES ($1, $2, $3, $4, now())
-		ON CONFLICT (letter, slot) DO UPDATE SET mime = EXCLUDED.mime, data = EXCLUDED.data, updated_at = now()`,
-		letter, slot, mime, data)
-	if err != nil {
-		serverErr(w, err)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func handleDeletePhoto(w http.ResponseWriter, r *http.Request) {
-	letter, ok := parseLetter(w, r)
-	if !ok {
-		return
-	}
-	slot, ok := parseSlot(w, r)
-	if !ok {
-		return
-	}
-	db, err := DB(r.Context())
-	if err != nil {
-		serverErr(w, err)
-		return
-	}
-	if _, err := db.Exec(r.Context(), `DELETE FROM photos WHERE letter = $1 AND slot = $2`, letter, slot); err != nil {
-		serverErr(w, err)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func handleGetPhoto(w http.ResponseWriter, r *http.Request) {
-	letter, ok := parseLetter(w, r)
-	if !ok {
-		return
-	}
-	slot, ok := parseSlot(w, r)
-	if !ok {
-		return
-	}
-	db, err := DB(r.Context())
-	if err != nil {
-		serverErr(w, err)
-		return
-	}
-	var mime string
-	var data []byte
-	err = db.QueryRow(r.Context(), `SELECT mime, data FROM photos WHERE letter = $1 AND slot = $2`, letter, slot).Scan(&mime, &data)
-	if errors.Is(err, pgx.ErrNoRows) {
-		writeErr(w, http.StatusNotFound, "pas de photo")
-		return
-	}
-	if err != nil {
-		serverErr(w, err)
-		return
-	}
-	w.Header().Set("Content-Type", mime)
-	w.Header().Set("Content-Length", strconv.Itoa(len(data)))
-	// URLs carry a ?v= version, so the browser may keep them forever.
-	w.Header().Set("Cache-Control", "private, max-age=31536000, immutable")
-	w.Write(data)
-}
-
 func handleGetSettings(w http.ResponseWriter, r *http.Request) {
 	db, err := DB(r.Context())
 	if err != nil {
@@ -339,13 +149,13 @@ func handlePutSettings(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func parseLetter(w http.ResponseWriter, r *http.Request) (string, bool) {
-	l := strings.ToUpper(r.PathValue("letter"))
-	if len(l) != 1 || !strings.Contains(Letters, l) {
-		writeErr(w, http.StatusBadRequest, "lettre invalide")
-		return "", false
+func parseID(w http.ResponseWriter, r *http.Request) (int64, bool) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil || id <= 0 {
+		writeErr(w, http.StatusBadRequest, "date invalide")
+		return 0, false
 	}
-	return l, true
+	return id, true
 }
 
 func parseSlot(w http.ResponseWriter, r *http.Request) (int, bool) {

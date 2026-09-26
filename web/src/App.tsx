@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import { api, ApiError, type DateEntry, type Settings } from './api'
+import { api, ApiError, type Entry, type Settings } from './api'
 import { useHashRoute } from './useHashRoute'
 import Login from './components/Login'
 import Home from './components/Home'
-import Detail from './components/Detail'
+import LetterPage from './components/LetterPage'
+import EntryPage from './components/EntryPage'
 import SettingsPage from './components/SettingsPage'
 
 type Auth = 'loading' | 'in' | 'out'
@@ -11,14 +12,14 @@ type Auth = 'loading' | 'in' | 'out'
 export default function App() {
   const route = useHashRoute()
   const [auth, setAuth] = useState<Auth>('loading')
-  const [dates, setDates] = useState<DateEntry[] | null>(null)
+  const [entries, setEntries] = useState<Entry[] | null>(null)
   const [settings, setSettings] = useState<Settings>({ person1: 'Moi', person2: 'Elle' })
   const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
     try {
-      const [d, s] = await Promise.all([api.dates(), api.settings()])
-      setDates(d)
+      const [e, s] = await Promise.all([api.entries(), api.settings()])
+      setEntries(e)
       setSettings(s)
       setError(null)
     } catch (e) {
@@ -40,7 +41,7 @@ export default function App() {
 
   if (auth === 'loading') return <Splash />
   if (auth === 'out') return <Login onLoggedIn={() => setAuth('in')} />
-  if (!dates) return error ? <ErrorScreen message={error} onRetry={refresh} /> : <Splash />
+  if (!entries) return error ? <ErrorScreen message={error} onRetry={refresh} /> : <Splash />
 
   if (route === 'reglages') {
     return (
@@ -48,17 +49,25 @@ export default function App() {
         settings={settings}
         onSaved={refresh}
         onLoggedOut={() => {
-          setDates(null)
+          setEntries(null)
           setAuth('out')
         }}
       />
     )
   }
 
-  const current = dates.find((d) => d.letter === route.toUpperCase())
-  if (current) return <Detail key={current.letter} entry={current} settings={settings} onChanged={refresh} />
+  // Routes: "A" = letter page, "A/12" = a date, "A/nouveau" = new date.
+  const m = route.match(/^([A-Za-z])(?:\/(\d+|nouveau))?$/)
+  if (m) {
+    const letter = m[1].toUpperCase()
+    if (!m[2]) return <LetterPage key={letter} letter={letter} entries={entries} />
+    const entry = m[2] === 'nouveau' ? null : entries.find((e) => e.id === Number(m[2]))
+    if (entry !== undefined) {
+      return <EntryPage key={m[2]} letter={letter} entry={entry} settings={settings} onChanged={refresh} />
+    }
+  }
 
-  return <Home dates={dates} settings={settings} />
+  return <Home entries={entries} settings={settings} />
 }
 
 function Splash() {

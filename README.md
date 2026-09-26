@@ -4,8 +4,9 @@ Notre liste de dates de **A à Z**, avec la photo que chacune a prise de l'autre
 Appli mobile installable (PWA) : React 19 + API Go, hébergée sur Vercel.
 
 - Grille A→Z : ce qui est fait (avec la photo en vignette), prévu, ou encore à imaginer
+- **Plusieurs dates par lettre** : une lettre est « faite » dès qu'un de ses dates est réalisé
 - Progression `x / 26`, filtres *Toutes / Faites / À faire*, et un 🎲 pour tirer le prochain date au hasard
-- Page par lettre : idée, lieu, date de réalisation, souvenirs, et 2 photos (« Elle par Moi » / « Moi par Elle »)
+- Page par date : idée, lieu, date de réalisation, souvenirs, et 2 photos (« Elle par Moi » / « Moi par Elle »)
 - Photos compressées dans le navigateur (1600 px JPEG) puis stockées en base
 - Protégé par un mot de passe partagé (cookie 1 an)
 
@@ -24,11 +25,15 @@ vercel.json         build du front + rewrite /api/* → fonction Go
 | Méthode | Route | |
 |---|---|---|
 | POST | `/api/login` `{password}` | ouvre la session |
-| GET | `/api/dates` | les 26 lettres |
-| PUT | `/api/dates/{L}` `{idea, place, notes, doneOn}` | modifier une lettre (`doneOn` = `AAAA-MM-JJ` ou `null`) |
-| PUT / DELETE | `/api/dates/{L}/photos/{1\|2}` | envoyer (corps = image brute, 4 Mo max) / supprimer une photo |
-| GET | `/api/photos/{L}/{1\|2}` | l'image |
+| GET | `/api/entries` | tous les dates, triés par lettre |
+| POST | `/api/entries` `{letter, idea, place, notes, doneOn}` | ajouter un date (`doneOn` = `AAAA-MM-JJ` ou `null`) |
+| PUT / DELETE | `/api/entries/{id}` | modifier / supprimer un date (et ses photos) |
+| PUT / DELETE | `/api/entries/{id}/photos/{1\|2}` | envoyer (corps = image brute, 4 Mo max) / supprimer une photo |
+| GET | `/api/photos/{id}/{1\|2}` | l'image |
 | GET / PUT | `/api/settings` `{person1, person2}` | vos prénoms |
+| GET | `/api/health` | l'API et la base répondent-elles ? |
+
+Les données de la première version (un seul date par lettre) sont reprises automatiquement au premier démarrage ; les anciennes tables `dates` / `photos` sont gardées en sauvegarde.
 
 ## Déployer sur Vercel
 

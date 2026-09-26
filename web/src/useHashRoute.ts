@@ -23,8 +23,8 @@ export const navigate = (route: string, { replace = false } = {}) => {
 }
 
 /** Go back if we came from inside the app (keeps the phone back gesture
- *  consistent), otherwise go home — e.g. when a detail page was opened directly. */
-export const goBack = () => {
+ *  consistent), otherwise go to `fallback` — e.g. when a page was opened directly. */
+export const goBack = (fallback = '') => {
   if (navigatedInApp) history.back()
-  else navigate('')
+  else navigate(fallback, { replace: true })
 }

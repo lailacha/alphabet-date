@@ -1,12 +1,16 @@
-export type DateEntry = {
+/** One date. A letter can have several. */
+export type Entry = {
+  id: number
   letter: string
   idea: string
   place: string
   notes: string
   doneOn: string | null
   photos: [string | null, string | null]
-  updatedAt: string
+  createdAt: string
 }
+
+export type EntryInput = Pick<Entry, 'idea' | 'place' | 'notes' | 'doneOn'>
 
 export type Settings = { person1: string; person2: string }
 
@@ -43,17 +47,18 @@ export const api = {
   me: () => request<{ authenticated: boolean; passwordRequired: boolean }>('/me'),
   login: (password: string) => request<void>('/login', json('POST', { password })),
   logout: () => request<void>('/logout', { method: 'POST' }),
-  dates: () => request<DateEntry[]>('/dates'),
-  updateDate: (letter: string, d: Pick<DateEntry, 'idea' | 'place' | 'notes' | 'doneOn'>) =>
-    request<void>(`/dates/${letter}`, json('PUT', d)),
-  uploadPhoto: (letter: string, slot: 1 | 2, blob: Blob) =>
-    request<void>(`/dates/${letter}/photos/${slot}`, {
+  entries: () => request<Entry[]>('/entries'),
+  createEntry: (letter: string, e: EntryInput) =>
+    request<{ id: number }>('/entries', json('POST', { letter, ...e })),
+  updateEntry: (id: number, e: EntryInput) => request<void>(`/entries/${id}`, json('PUT', e)),
+  deleteEntry: (id: number) => request<void>(`/entries/${id}`, { method: 'DELETE' }),
+  uploadPhoto: (id: number, slot: 1 | 2, blob: Blob) =>
+    request<void>(`/entries/${id}/photos/${slot}`, {
       method: 'PUT',
       headers: { 'Content-Type': blob.type || 'application/octet-stream' },
       body: blob,
     }),
-  deletePhoto: (letter: string, slot: 1 | 2) =>
-    request<void>(`/dates/${letter}/photos/${slot}`, { method: 'DELETE' }),
+  deletePhoto: (id: number, slot: 1 | 2) => request<void>(`/entries/${id}/photos/${slot}`, { method: 'DELETE' }),
   settings: () => request<Settings>('/settings'),
   saveSettings: (s: Settings) => request<void>('/settings', json('PUT', s)),
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import type { DateEntry, Settings } from '../api'
+import type { Entry, Settings } from '../api'
+import { summarize, type LetterSummary } from '../letters'
 import { navigate } from '../useHashRoute'
 
 type Filter = 'all' | 'done' | 'todo'
@@ -14,7 +15,7 @@ const loadFilter = (): Filter => {
   }
 }
 
-export default function Home({ dates, settings }: { dates: DateEntry[]; settings: Settings }) {
+export default function Home({ entries, settings }: { entries: Entry[]; settings: Settings }) {
   const [filter, setFilterState] = useState<Filter>(loadFilter)
   const setFilter = (f: Filter) => {
     setFilterState(f)
@@ -25,14 +26,24 @@ export default function Home({ dates, settings }: { dates: DateEntry[]; settings
     }
   }
 
-  const done = dates.filter((d) => d.doneOn)
-  const todo = dates.filter((d) => !d.doneOn)
-  const shown = filter === 'done' ? done : filter === 'todo' ? todo : dates
+  const letters = summarize(entries)
+  const done = letters.filter((l) => l.isDone)
+  const todo = letters.filter((l) => !l.isDone)
+  const shown = filter === 'done' ? done : filter === 'todo' ? todo : letters
+  const datesDone = entries.filter((e) => e.doneOn).length
 
+  // Prefer a planned date from a letter not done yet, then any planned date,
+  // then just an empty letter to fill in.
   const pickRandom = () => {
-    const withIdea = todo.filter((d) => d.idea)
-    const pool = withIdea.length ? withIdea : todo
-    if (pool.length) navigate(pool[Math.floor(Math.random() * pool.length)].letter)
+    const planned = entries.filter((e) => !e.doneOn)
+    const fresh = planned.filter((e) => todo.some((l) => l.letter === e.letter))
+    const pool = fresh.length ? fresh : planned
+    if (pool.length) {
+      const e = pool[Math.floor(Math.random() * pool.length)]
+      navigate(`${e.letter}/${e.id}`)
+    } else if (todo.length) {
+      navigate(todo[Math.floor(Math.random() * todo.length)].letter)
+    }
   }
 
   return (
@@ -49,7 +60,7 @@ export default function Home({ dates, settings }: { dates: DateEntry[]; settings
         </button>
       </header>
 
-      <Progress done={done.length} total={dates.length} />
+      <Progress done={done.length} total={letters.length} datesDone={datesDone} />
 
       <div className="toolbar">
         <div className="segmented" role="tablist">
@@ -65,7 +76,7 @@ export default function Home({ dates, settings }: { dates: DateEntry[]; settings
             </button>
           ))}
         </div>
-        {todo.length > 0 && (
+        {(todo.length > 0 || entries.some((e) => !e.doneOn)) && (
           <button className="btn btn-small" onClick={pickRandom} title="Choisir le prochain date au hasard">
             🎲 Au hasard
           </button>
@@ -76,9 +87,9 @@ export default function Home({ dates, settings }: { dates: DateEntry[]; settings
         <p className="empty">{filter === 'done' ? 'Pas encore de date réalisé… à vous de jouer !' : 'Tout est fait, bravo ! 🎉'}</p>
       ) : (
         <ul className="grid">
-          {shown.map((d) => (
-            <li key={d.letter}>
-              <Tile entry={d} />
+          {shown.map((l) => (
+            <li key={l.letter}>
+              <Tile summary={l} />
             </li>
           ))}
         </ul>
@@ -87,23 +98,35 @@ export default function Home({ dates, settings }: { dates: DateEntry[]; settings
   )
 }
 
-function Tile({ entry }: { entry: DateEntry }) {
-  const cover = entry.photos[0] ?? entry.photos[1]
-  const state = entry.doneOn ? 'done' : entry.idea ? 'planned' : 'empty'
+function Tile({ summary }: { summary: LetterSummary }) {
+  const { letter, entries, done, isDone, cover } = summary
+  const state = isDone ? 'done' : entries.length ? 'planned' : 'empty'
+  const label =
+    state === 'empty'
+      ? 'À imaginer'
+      : entries.length === 1
+        ? entries[0].idea
+        : isDone
+          ? `${done[0].idea} +${entries.length - 1}`
+          : `${entries.length} idées`
   return (
-    <button className={`tile tile-${state}`} onClick={() => navigate(entry.letter)}>
-      {cover && entry.doneOn && <img src={cover} alt="" loading="lazy" decoding="async" />}
-      <span className="tile-letter">{entry.letter}</span>
-      <span className="tile-label">{entry.idea || (state === 'empty' ? 'À imaginer' : '')}</span>
-      {entry.doneOn && <span className="tile-check" aria-label="Fait">✓</span>}
+    <button className={`tile tile-${state}`} onClick={() => navigate(letter)}>
+      {cover && <img src={cover} alt="" loading="lazy" decoding="async" />}
+      <span className="tile-letter">{letter}</span>
+      <span className="tile-label">{label}</span>
+      {isDone && (
+        <span className="tile-check" aria-label={`${done.length} fait${done.length > 1 ? 's' : ''}`}>
+          {done.length > 1 ? done.length : '✓'}
+        </span>
+      )}
     </button>
   )
 }
 
-function Progress({ done, total }: { done: number; total: number }) {
+function Progress({ done, total, datesDone }: { done: number; total: number; datesDone: number }) {
   const pct = total ? done / total : 0
   return (
-    <section className="progress" aria-label={`${done} dates réalisés sur ${total}`}>
+    <section className="progress" aria-label={`${done} lettres faites sur ${total}`}>
       <div className="progress-numbers">
         <strong>{done}</strong>
         <span>/ {total}</span>
@@ -117,6 +140,7 @@ function Progress({ done, total }: { done: number; total: number }) {
           : done === total
             ? 'Alphabet complet ! 💖'
             : `Encore ${total - done} lettre${total - done > 1 ? 's' : ''} à vivre`}
+        {datesDone > done && ` · ${datesDone} dates au total`}
       </p>
     </section>
   )

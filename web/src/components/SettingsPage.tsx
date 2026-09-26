@@ -21,7 +21,7 @@ export default function SettingsPage({ settings, onSaved, onLoggedOut }: Props) 
   return (
     <main className="detail">
       <header className="detail-header">
-        <button className="icon-btn" aria-label="Retour" onClick={goBack}>
+        <button className="icon-btn" aria-label="Retour" onClick={() => goBack()}>
           ←
         </button>
         <h1 className="page-title">Réglages</h1>
