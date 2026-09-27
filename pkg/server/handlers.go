@@ -30,6 +30,9 @@ func NewHandler() http.Handler {
 	mux.HandleFunc("POST /api/logout", handleLogout)
 
 	mux.Handle("GET /api/entries", protected(handleListEntries))
+	// Old name, still used by app versions cached on phones before the switch
+	// to several dates per letter.
+	mux.Handle("GET /api/dates", protected(handleListEntries))
 	mux.Handle("POST /api/entries", protected(handleCreateEntry))
 	mux.Handle("PUT /api/entries/{id}", protected(handleUpdateEntry))
 	mux.Handle("DELETE /api/entries/{id}", protected(handleDeleteEntry))
