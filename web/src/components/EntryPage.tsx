@@ -15,6 +15,16 @@ type Props = {
 export default function EntryPage({ letter, entry, settings, onChanged }: Props) {
   const [editing, setEditing] = useState(!entry)
   const [viewer, setViewer] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  const run = async (fn: () => Promise<void>) => {
+    setActionError(null)
+    try {
+      await fn()
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Erreur')
+    }
+  }
 
   const [error, save, saving] = useActionState(async (_: string | null, form: FormData) => {
     const input: EntryInput = {
@@ -40,18 +50,20 @@ export default function EntryPage({ letter, entry, settings, onChanged }: Props)
     }
   }, null)
 
-  const markDone = async (done: boolean) => {
-    if (!entry) return
-    await api.updateEntry(entry.id, { ...entry, doneOn: done ? today() : null })
-    await onChanged()
-  }
+  const markDone = (done: boolean) =>
+    run(async () => {
+      if (!entry) return
+      await api.updateEntry(entry.id, { ...entry, doneOn: done ? today() : null })
+      await onChanged()
+    })
 
-  const remove = async () => {
-    if (!entry || !confirm(`Supprimer « ${entry.idea} » et ses photos ?`)) return
-    await api.deleteEntry(entry.id)
-    goBack(letter)
-    await onChanged()
-  }
+  const remove = () =>
+    run(async () => {
+      if (!entry || !confirm(`Supprimer « ${entry.idea} » et ses photos ?`)) return
+      await api.deleteEntry(entry.id)
+      goBack(letter)
+      await onChanged()
+    })
 
   return (
     <main className="detail">
@@ -102,6 +114,7 @@ export default function EntryPage({ letter, entry, settings, onChanged }: Props)
             {entry.place && <p className="info-line">📍 {entry.place}</p>}
             {entry.doneOn && <p className="info-line">📅 {formatDate(entry.doneOn)}</p>}
             {entry.notes && <p className="notes">{entry.notes}</p>}
+            {actionError && <p className="error">{actionError}</p>}
             <div className="form-actions">
               <button className="btn" onClick={() => setEditing(true)}>
                 Modifier
@@ -183,9 +196,12 @@ function PhotoSlot({ entry, slot, label, onChanged, onOpen }: SlotProps) {
   const remove = async () => {
     if (!confirm('Supprimer cette photo ?')) return
     setBusy(true)
+    setError(null)
     try {
       await api.deletePhoto(entry.id, slot)
       await onChanged()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Suppression impossible')
     } finally {
       setBusy(false)
     }

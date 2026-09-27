@@ -20,21 +20,48 @@ export class ApiError extends Error {
   }
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`/api${path}`, { credentials: 'same-origin', ...init })
+  const method = init?.method ?? 'GET'
+  let res: Response
+  try {
+    res = await fetch(`/api${path}`, { credentials: 'same-origin', ...init })
+  } catch (e) {
+    // Mobile networks drop requests now and then: retry reads once.
+    if (method === 'GET') {
+      await sleep(800)
+      try {
+        res = await fetch(`/api${path}`, { credentials: 'same-origin', ...init })
+      } catch (e2) {
+        throw networkError(method, path, e2)
+      }
+    } else {
+      throw networkError(method, path, e)
+    }
+  }
   if (!res.ok) {
-    let msg = `Erreur ${res.status}`
+    let msg = `Erreur ${res.status} (${method} /api${path})`
+    const text = await res.text().catch(() => '')
     try {
-      const body = await res.json()
+      const body = JSON.parse(text)
       msg = body.error ?? msg
       if (body.detail) msg += ` — ${body.detail}`
     } catch {
-      /* not JSON */
+      // Not our JSON: an error page from Vercel (timeout, crash, too large…).
+      const code = res.headers.get('x-vercel-error')
+      if (code) msg += ` — ${code}`
+      else if (text) msg += ` — ${text.slice(0, 120)}`
     }
     throw new ApiError(res.status, msg)
   }
   if (res.status === 204) return undefined as T
   return res.json()
+}
+
+function networkError(method: string, path: string, e: unknown) {
+  const why = e instanceof Error ? e.message : String(e)
+  return new ApiError(0, `Connexion au serveur impossible (${method} /api${path}) — ${why}`)
 }
 
 const json = (method: string, body: unknown): RequestInit => ({
