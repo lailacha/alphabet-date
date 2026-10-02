@@ -104,7 +104,7 @@ func handleGetSettings(w http.ResponseWriter, r *http.Request) {
 		serverErr(w, err)
 		return
 	}
-	s := Settings{Person1: "Moi", Person2: "Elle"}
+	s := Settings{Person1: "Laïla", Person2: "Anaïs"}
 	rows, err := db.Query(r.Context(), `SELECT key, value FROM settings`)
 	if err != nil {
 		serverErr(w, err)

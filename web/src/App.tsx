@@ -13,7 +13,7 @@ export default function App() {
   const route = useHashRoute()
   const [auth, setAuth] = useState<Auth>('loading')
   const [entries, setEntries] = useState<Entry[] | null>(null)
-  const [settings, setSettings] = useState<Settings>({ person1: 'Moi', person2: 'Elle' })
+  const [settings, setSettings] = useState<Settings>({ person1: 'Laïla', person2: 'Anaïs' })
   const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {

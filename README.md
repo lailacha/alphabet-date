@@ -6,7 +6,7 @@ Appli mobile installable (PWA) : React 19 + API Go, hébergée sur Vercel.
 - Grille A→Z : ce qui est fait (avec la photo en vignette), prévu, ou encore à imaginer
 - **Plusieurs dates par lettre** : une lettre est « faite » dès qu'un de ses dates est réalisé
 - Progression `x / 26`, filtres *Toutes / Faites / À faire*, et un 🎲 pour tirer le prochain date au hasard
-- Page par date : idée, lieu, date de réalisation, souvenirs, et 2 photos (« Elle par Moi » / « Moi par Elle »)
+- Page par date : idée, lieu, date de réalisation, souvenirs, et 2 photos (« Anaïs par Laïla » / « Laïla par Anaïs »)
 - Photos compressées dans le navigateur (1600 px JPEG) puis stockées en base
 - Protégé par un mot de passe partagé (cookie 1 an)
 

@@ -29,7 +29,7 @@ export default function SettingsPage({ settings, onSaved, onLoggedOut }: Props) 
       </header>
 
       <form className="card form" action={save}>
-        <p className="muted small">Vos prénoms, utilisés pour légender les photos (« Elle par Moi »).</p>
+        <p className="muted small">Vos prénoms, utilisés pour légender les photos (« Anaïs par Laïla »).</p>
         <label>
           Prénom 1
           <input name="person1" defaultValue={settings.person1} required />
