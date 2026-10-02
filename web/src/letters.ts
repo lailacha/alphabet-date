@@ -8,15 +8,19 @@ export type LetterSummary = {
   done: Entry[]
   /** A letter counts as done as soon as one of its dates is done. */
   isDone: boolean
+  /** The date shown on the tile: the featured one, else the first. */
+  lead: Entry | null
   cover: string | null
 }
 
 export function summarize(entries: Entry[]): LetterSummary[] {
   return LETTERS.map((letter) => {
     const mine = entries.filter((e) => e.letter === letter)
-    const done = mine.filter((e) => e.doneOn)
-    const cover = done.flatMap((e) => e.photos).find((p) => p) ?? null
-    return { letter, entries: mine, done, isDone: done.length > 0, cover }
+    const done = mine.filter((e) => e.done)
+    // The API lists the featured date first, then done ones, then the rest.
+    const lead = mine[0] ?? null
+    const cover = [lead, ...done].flatMap((e) => e?.photos ?? []).find((p) => p) ?? null
+    return { letter, entries: mine, done, isDone: done.length > 0, lead, cover }
   })
 }
 

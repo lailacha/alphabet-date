@@ -4,7 +4,7 @@ import { goBack, navigate } from '../useHashRoute'
 
 export default function LetterPage({ letter, entries }: { letter: string; entries: Entry[] }) {
   const mine = entries.filter((e) => e.letter === letter)
-  const doneCount = mine.filter((e) => e.doneOn).length
+  const doneCount = mine.filter((e) => e.done).length
   const i = LETTERS.indexOf(letter)
 
   return (
@@ -43,14 +43,17 @@ export default function LetterPage({ letter, entries }: { letter: string; entrie
             const cover = e.photos[0] ?? e.photos[1]
             return (
               <li key={e.id}>
-                <button className={`entry-card ${e.doneOn ? 'is-done' : ''}`} onClick={() => navigate(`${letter}/${e.id}`)}>
+                <button className={`entry-card ${e.done ? 'is-done' : ''}`} onClick={() => navigate(`${letter}/${e.id}`)}>
                   <span className="entry-thumb">
-                    {cover ? <img src={cover} alt="" loading="lazy" /> : <span>{e.doneOn ? '✓' : letter}</span>}
+                    {cover ? <img src={cover} alt="" loading="lazy" /> : <span>{e.done ? '✓' : letter}</span>}
                   </span>
                   <span className="entry-text">
-                    <strong>{e.idea || 'Sans titre'}</strong>
+                    <strong>
+                      {e.featured && <span className="star" aria-label="Mis en avant">★ </span>}
+                      {e.idea || 'Sans titre'}
+                    </strong>
                     <span className="muted small">
-                      {e.doneOn ? `✓ ${formatDate(e.doneOn)}` : 'À faire'}
+                      {e.done ? (e.doneOn ? `✓ ${formatDate(e.doneOn)}` : '✓ Fait') : 'À faire'}
                       {e.place && ` · ${e.place}`}
                     </span>
                   </span>

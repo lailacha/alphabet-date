@@ -36,6 +36,8 @@ func NewHandler() http.Handler {
 	mux.Handle("POST /api/entries", protected(handleCreateEntry))
 	mux.Handle("PUT /api/entries/{id}", protected(handleUpdateEntry))
 	mux.Handle("DELETE /api/entries/{id}", protected(handleDeleteEntry))
+	mux.Handle("PUT /api/entries/{id}/featured", protected(handleFeatureEntry))
+	mux.Handle("DELETE /api/entries/{id}/featured", protected(handleFeatureEntry))
 	mux.Handle("PUT /api/entries/{id}/photos/{slot}", protected(handlePutPhoto))
 	mux.Handle("DELETE /api/entries/{id}/photos/{slot}", protected(handleDeletePhoto))
 	mux.Handle("GET /api/photos/{id}/{slot}", protected(handleGetPhoto))
@@ -104,7 +106,7 @@ func handleGetSettings(w http.ResponseWriter, r *http.Request) {
 		serverErr(w, err)
 		return
 	}
-	s := Settings{Person1: "Laïla", Person2: "Anaïs"}
+	s := Settings{Person1: "Anaïs", Person2: "Laïla"}
 	rows, err := db.Query(r.Context(), `SELECT key, value FROM settings`)
 	if err != nil {
 		serverErr(w, err)

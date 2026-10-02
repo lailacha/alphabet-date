@@ -5,17 +5,15 @@
 package main
 
 import (
-	"bufio"
 	"log"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/lailacha/alphabet-date/pkg/server"
 )
 
 func main() {
-	loadDotEnv(".env")
+	server.LoadDotEnv(".env")
 	if os.Getenv("DATABASE_URL") == "" && os.Getenv("POSTGRES_URL") == "" {
 		log.Fatal("DATABASE_URL manquant : copie .env.example en .env et remplis-le")
 	}
@@ -26,31 +24,6 @@ func main() {
 	}
 	log.Printf("API listening on http://localhost%s", addr)
 	log.Fatal(http.ListenAndServe(addr, logRequests(server.NewHandler())))
-}
-
-func loadDotEnv(path string) {
-	f, err := os.Open(path)
-	if err != nil {
-		return
-	}
-	defer f.Close()
-	sc := bufio.NewScanner(f)
-	for sc.Scan() {
-		line := strings.TrimSpace(sc.Text())
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-		k, v, ok := strings.Cut(line, "=")
-		if !ok {
-			continue
-		}
-		k = strings.TrimSpace(strings.TrimPrefix(k, "export "))
-		v = strings.Trim(strings.TrimSpace(v), `"'`)
-		if _, set := os.LookupEnv(k); !set {
-			os.Setenv(k, v)
-		}
-	}
-	log.Printf("loaded %s", path)
 }
 
 // logRequests prints every API call with its status, so errors show up in

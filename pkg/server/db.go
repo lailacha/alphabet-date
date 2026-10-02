@@ -32,6 +32,11 @@ CREATE TABLE IF NOT EXISTS entries (
 	updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS entries_letter_idx ON entries (letter);
+-- The date shown on the home tile for its letter (at most one per letter).
+ALTER TABLE entries ADD COLUMN IF NOT EXISTS featured BOOLEAN NOT NULL DEFAULT false;
+-- "Done" no longer requires a date (imported dates were done on unknown days).
+ALTER TABLE entries ADD COLUMN IF NOT EXISTS done BOOLEAN NOT NULL DEFAULT false;
+UPDATE entries SET done = true WHERE done_on IS NOT NULL AND NOT done;
 CREATE TABLE IF NOT EXISTS entry_photos (
 	entry_id   BIGINT NOT NULL REFERENCES entries(id) ON DELETE CASCADE,
 	slot       SMALLINT NOT NULL CHECK (slot IN (1, 2)),

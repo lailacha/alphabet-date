@@ -4,7 +4,7 @@ Notre liste de dates de **A à Z**, avec la photo que chacune a prise de l'autre
 Appli mobile installable (PWA) : React 19 + API Go, hébergée sur Vercel.
 
 - Grille A→Z : ce qui est fait (avec la photo en vignette), prévu, ou encore à imaginer
-- **Plusieurs dates par lettre** : une lettre est « faite » dès qu'un de ses dates est réalisé
+- **Plusieurs dates par lettre** : une lettre est « faite » dès qu'un de ses dates est réalisé ; on choisit le date **mis en avant** sur l'accueil (★), et toucher une lettre ouvre directement ce date
 - Progression `x / 26`, filtres *Toutes / Faites / À faire*, et un 🎲 pour tirer le prochain date au hasard
 - Page par date : idée, lieu, date de réalisation, souvenirs, et 2 photos (« Anaïs par Laïla » / « Laïla par Anaïs »)
 - Photos compressées dans le navigateur (1600 px JPEG) puis stockées en base
@@ -72,5 +72,15 @@ npm run dev               # http://localhost:5173 (les appels /api partent vers 
 ```
 
 Ouvrir http://localhost:5173. Pour tester sur le téléphone (même Wi-Fi) : `http://<ip-du-pc>:5173`.
+
+### Importer notre liste
+
+La liste est dans `cmd/seed/alphabet.md` (`[x]` = déjà fait). Pour l'ajouter à la base indiquée dans `.env` :
+
+```bash
+go run ./cmd/seed
+```
+
+On peut le relancer sans risque : une idée déjà présente pour sa lettre n'est pas ajoutée en double.
 
 Avec l'URL Neon dans `.env`, le local utilise **la même base que le site en ligne** : pratique pour reproduire un bug, mais les modifications sont réelles.

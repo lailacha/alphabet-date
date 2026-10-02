@@ -30,12 +30,12 @@ export default function Home({ entries, settings }: { entries: Entry[]; settings
   const done = letters.filter((l) => l.isDone)
   const todo = letters.filter((l) => !l.isDone)
   const shown = filter === 'done' ? done : filter === 'todo' ? todo : letters
-  const datesDone = entries.filter((e) => e.doneOn).length
+  const datesDone = entries.filter((e) => e.done).length
 
   // Prefer a planned date from a letter not done yet, then any planned date,
   // then just an empty letter to fill in.
   const pickRandom = () => {
-    const planned = entries.filter((e) => !e.doneOn)
+    const planned = entries.filter((e) => !e.done)
     const fresh = planned.filter((e) => todo.some((l) => l.letter === e.letter))
     const pool = fresh.length ? fresh : planned
     if (pool.length) {
@@ -76,7 +76,7 @@ export default function Home({ entries, settings }: { entries: Entry[]; settings
             </button>
           ))}
         </div>
-        {(todo.length > 0 || entries.some((e) => !e.doneOn)) && (
+        {(todo.length > 0 || entries.some((e) => !e.done)) && (
           <button className="btn btn-small" onClick={pickRandom} title="Choisir le prochain date au hasard">
             🎲 Au hasard
           </button>
@@ -99,18 +99,12 @@ export default function Home({ entries, settings }: { entries: Entry[]; settings
 }
 
 function Tile({ summary }: { summary: LetterSummary }) {
-  const { letter, entries, done, isDone, cover } = summary
-  const state = isDone ? 'done' : entries.length ? 'planned' : 'empty'
-  const label =
-    state === 'empty'
-      ? 'À imaginer'
-      : entries.length === 1
-        ? entries[0].idea
-        : isDone
-          ? `${done[0].idea} +${entries.length - 1}`
-          : `${entries.length} idées`
+  const { letter, entries, done, isDone, lead, cover } = summary
+  const state = isDone ? 'done' : lead ? 'planned' : 'empty'
+  const label = !lead ? 'À imaginer' : entries.length > 1 ? `${lead.idea} +${entries.length - 1}` : lead.idea
+  // A letter with dates opens its featured (or first) date directly.
   return (
-    <button className={`tile tile-${state}`} onClick={() => navigate(letter)}>
+    <button className={`tile tile-${state}`} onClick={() => navigate(lead ? `${letter}/${lead.id}` : letter)}>
       {cover && <img src={cover} alt="" loading="lazy" decoding="async" />}
       <span className="tile-letter">{letter}</span>
       <span className="tile-label">{label}</span>

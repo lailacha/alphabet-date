@@ -13,7 +13,7 @@ export default function App() {
   const route = useHashRoute()
   const [auth, setAuth] = useState<Auth>('loading')
   const [entries, setEntries] = useState<Entry[] | null>(null)
-  const [settings, setSettings] = useState<Settings>({ person1: 'Laïla', person2: 'Anaïs' })
+  const [settings, setSettings] = useState<Settings>({ person1: 'Anaïs', person2: 'Laïla' })
   const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
@@ -63,7 +63,10 @@ export default function App() {
     if (!m[2]) return <LetterPage key={letter} letter={letter} entries={entries} />
     const entry = m[2] === 'nouveau' ? null : entries.find((e) => e.id === Number(m[2]))
     if (entry !== undefined) {
-      return <EntryPage key={m[2]} letter={letter} entry={entry} settings={settings} onChanged={refresh} />
+      const siblings = entries.filter((e) => e.letter === letter)
+      return (
+        <EntryPage key={m[2]} letter={letter} entry={entry} siblings={siblings} settings={settings} onChanged={refresh} />
+      )
     }
   }
 

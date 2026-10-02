@@ -8,11 +8,13 @@ type Props = {
   letter: string
   /** null = creating a new date for this letter */
   entry: Entry | null
+  /** All dates of this letter, this one included. */
+  siblings: Entry[]
   settings: Settings
   onChanged: () => Promise<void>
 }
 
-export default function EntryPage({ letter, entry, settings, onChanged }: Props) {
+export default function EntryPage({ letter, entry, siblings, settings, onChanged }: Props) {
   const [editing, setEditing] = useState(!entry)
   const [viewer, setViewer] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -31,6 +33,7 @@ export default function EntryPage({ letter, entry, settings, onChanged }: Props)
       idea: String(form.get('idea') ?? ''),
       place: String(form.get('place') ?? ''),
       notes: String(form.get('notes') ?? ''),
+      done: form.get('done') === 'on' || !!form.get('doneOn'),
       doneOn: String(form.get('doneOn') ?? '') || null,
     }
     try {
@@ -53,7 +56,14 @@ export default function EntryPage({ letter, entry, settings, onChanged }: Props)
   const markDone = (done: boolean) =>
     run(async () => {
       if (!entry) return
-      await api.updateEntry(entry.id, { ...entry, doneOn: done ? today() : null })
+      await api.updateEntry(entry.id, { ...entry, done, doneOn: done ? (entry.doneOn ?? today()) : null })
+      await onChanged()
+    })
+
+  const toggleFeatured = () =>
+    run(async () => {
+      if (!entry) return
+      await api.setFeatured(entry.id, !entry.featured)
       await onChanged()
     })
 
@@ -73,11 +83,30 @@ export default function EntryPage({ letter, entry, settings, onChanged }: Props)
         </button>
         <span className="detail-letter">{letter}</span>
         {entry ? (
-          <span className={`badge ${entry.doneOn ? 'badge-done' : ''}`}>{entry.doneOn ? 'Fait ✓' : 'À faire'}</span>
+          <span className={`badge ${entry.done ? 'badge-done' : ''}`}>{entry.done ? 'Fait ✓' : 'À faire'}</span>
         ) : (
           <span className="badge">Nouveau</span>
         )}
       </header>
+
+      {entry && (
+        <nav className="entry-links">
+          {siblings.length > 1 ? (
+            <button className="link" onClick={() => navigate(letter, { replace: true })}>
+              Voir les {siblings.length} dates en {letter}
+            </button>
+          ) : (
+            <button className="link" onClick={() => navigate(`${letter}/nouveau`)}>
+              ＋ Ajouter un autre date en {letter}
+            </button>
+          )}
+          {siblings.length > 1 && (
+            <button className={`chip ${entry.featured ? 'chip-on' : ''}`} onClick={toggleFeatured} aria-pressed={entry.featured}>
+              {entry.featured ? '★ Mis en avant' : '☆ Mettre en avant'}
+            </button>
+          )}
+        </nav>
+      )}
 
       {editing ? (
         <form className="card form" action={save}>
@@ -89,8 +118,12 @@ export default function EntryPage({ letter, entry, settings, onChanged }: Props)
             Lieu
             <input name="place" defaultValue={entry?.place} placeholder="Où ?" />
           </label>
+          <label className="check">
+            <input name="done" type="checkbox" defaultChecked={entry?.done} />
+            C'est fait
+          </label>
           <label>
-            Réalisé le
+            Réalisé le (facultatif)
             <input name="doneOn" type="date" defaultValue={entry?.doneOn ?? ''} />
           </label>
           <label>
@@ -119,7 +152,7 @@ export default function EntryPage({ letter, entry, settings, onChanged }: Props)
               <button className="btn" onClick={() => setEditing(true)}>
                 Modifier
               </button>
-              {entry.doneOn ? (
+              {entry.done ? (
                 <button className="btn" onClick={() => markDone(false)}>
                   Remettre à faire
                 </button>

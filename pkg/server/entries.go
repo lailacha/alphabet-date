@@ -22,7 +22,9 @@ type Entry struct {
 	Idea      string     `json:"idea"`
 	Place     string     `json:"place"`
 	Notes     string     `json:"notes"`
-	DoneOn    *string    `json:"doneOn"`
+	Done      bool       `json:"done"`
+	DoneOn    *string    `json:"doneOn"` // optional: when it was done
+	Featured  bool       `json:"featured"`
 	Photos    [2]*string `json:"photos"` // versioned URLs for slot 1 and 2, nil if empty
 	CreatedAt time.Time  `json:"createdAt"`
 }
@@ -32,7 +34,13 @@ type entryInput struct {
 	Idea   string  `json:"idea"`
 	Place  string  `json:"place"`
 	Notes  string  `json:"notes"`
+	Done   *bool   `json:"done"` // omitted by old clients: derived from doneOn
 	DoneOn *string `json:"doneOn"`
+}
+
+// isDone: a date with a done day is always done.
+func (in entryInput) isDone(doneOn *time.Time) bool {
+	return doneOn != nil || (in.Done != nil && *in.Done)
 }
 
 // decodeEntry reads and validates the request body. The letter is only
@@ -68,11 +76,11 @@ func handleListEntries(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rows, err := db.Query(r.Context(), `
-		SELECT e.id, e.letter, e.idea, e.place, e.notes, to_char(e.done_on, 'YYYY-MM-DD'), e.created_at,
+		SELECT e.id, e.letter, e.idea, e.place, e.notes, e.done, to_char(e.done_on, 'YYYY-MM-DD'), e.featured, e.created_at,
 		       (SELECT (extract(epoch FROM p.updated_at) * 1000)::bigint FROM entry_photos p WHERE p.entry_id = e.id AND p.slot = 1),
 		       (SELECT (extract(epoch FROM p.updated_at) * 1000)::bigint FROM entry_photos p WHERE p.entry_id = e.id AND p.slot = 2)
 		FROM entries e
-		ORDER BY e.letter, e.done_on NULLS LAST, e.created_at`)
+		ORDER BY e.letter, e.featured DESC, e.done DESC, e.done_on NULLS LAST, e.created_at`)
 	if err != nil {
 		serverErr(w, err)
 		return
@@ -83,7 +91,7 @@ func handleListEntries(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var e Entry
 		var v1, v2 *int64
-		if err := rows.Scan(&e.ID, &e.Letter, &e.Idea, &e.Place, &e.Notes, &e.DoneOn, &e.CreatedAt, &v1, &v2); err != nil {
+		if err := rows.Scan(&e.ID, &e.Letter, &e.Idea, &e.Place, &e.Notes, &e.Done, &e.DoneOn, &e.Featured, &e.CreatedAt, &v1, &v2); err != nil {
 			serverErr(w, err)
 			return
 		}
@@ -118,8 +126,8 @@ func handleCreateEntry(w http.ResponseWriter, r *http.Request) {
 	}
 	var id int64
 	err = db.QueryRow(r.Context(),
-		`INSERT INTO entries (letter, idea, place, notes, done_on) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-		in.Letter, in.Idea, in.Place, in.Notes, doneOn).Scan(&id)
+		`INSERT INTO entries (letter, idea, place, notes, done, done_on) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+		in.Letter, in.Idea, in.Place, in.Notes, in.isDone(doneOn), doneOn).Scan(&id)
 	if err != nil {
 		serverErr(w, err)
 		return
@@ -142,8 +150,37 @@ func handleUpdateEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	tag, err := db.Exec(r.Context(),
-		`UPDATE entries SET idea = $2, place = $3, notes = $4, done_on = $5, updated_at = now() WHERE id = $1`,
-		id, in.Idea, in.Place, in.Notes, doneOn)
+		`UPDATE entries SET idea = $2, place = $3, notes = $4, done = $5, done_on = $6, updated_at = now() WHERE id = $1`,
+		id, in.Idea, in.Place, in.Notes, in.isDone(doneOn), doneOn)
+	if err != nil {
+		serverErr(w, err)
+		return
+	}
+	if tag.RowsAffected() == 0 {
+		writeErr(w, http.StatusNotFound, "date introuvable")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// handleFeatureEntry makes this date the one shown for its letter (and
+// un-features the others of the same letter); DELETE removes the highlight.
+func handleFeatureEntry(w http.ResponseWriter, r *http.Request) {
+	id, ok := parseID(w, r)
+	if !ok {
+		return
+	}
+	db, err := DB(r.Context())
+	if err != nil {
+		serverErr(w, err)
+		return
+	}
+	query := `UPDATE entries SET featured = (id = $1)
+		WHERE letter = (SELECT letter FROM entries WHERE id = $1)`
+	if r.Method == http.MethodDelete {
+		query = `UPDATE entries SET featured = false WHERE id = $1`
+	}
+	tag, err := db.Exec(r.Context(), query, id)
 	if err != nil {
 		serverErr(w, err)
 		return
