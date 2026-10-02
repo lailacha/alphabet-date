@@ -1,38 +1,23 @@
 :root {
-  --bg: #fff7f2;
-  --surface: #ffffff;
-  --surface-2: #fbeee8;
-  --text: #2b1d22;
-  --muted: #8a7479;
-  --line: #f0dcd4;
-  --accent: #e8577a;
+  /* Palette « Velours bordeaux » (sombre, jour et nuit) */
+  --bg: #1a1013;
+  --surface: #26181c;
+  --surface-2: #332126;
+  --text: #f6e9e4;
+  --muted: #b5979d;
+  --line: #3d282d;
+  --accent: #e0607e;
+  --accent-2: #f29a8e;
   --accent-ink: #ffffff;
-  --accent-soft: #fde1e8;
-  --done: #3f9c78;
-  --danger: #c43d3d;
-  --shadow: 0 1px 2px rgb(43 29 34 / 0.06), 0 6px 18px rgb(43 29 34 / 0.06);
+  --accent-soft: #4a2530;
+  --done: #6cc9a1;
+  --done-ink: #0f2a1f;
+  --danger: #ff7b7b;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 6px 18px rgb(0 0 0 / 0.25);
   --radius: 18px;
   --serif: 'Fraunces', Georgia, serif;
   --sans: 'Nunito', system-ui, -apple-system, sans-serif;
-  color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1c1517;
-    --surface: #2a2023;
-    --surface-2: #33272b;
-    --text: #f7ebe6;
-    --muted: #b39da2;
-    --line: #3e3034;
-    --accent: #ff7a98;
-    --accent-ink: #2b1016;
-    --accent-soft: #4a2630;
-    --done: #6cc9a1;
-    --danger: #ff7b7b;
-    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 6px 18px rgb(0 0 0 / 0.25);
-    color-scheme: dark;
-  }
+  color-scheme: dark;
 }
 
 * {
@@ -260,7 +245,7 @@ textarea {
 .progress-bar div {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--accent), #f59e7a);
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
   transition: width 0.5s ease;
 }
 
@@ -367,7 +352,7 @@ textarea {
   font-size: 0.75rem;
   font-weight: 800;
   background: var(--done);
-  color: #fff;
+  color: var(--done-ink);
 }
 .tile-empty {
   background: transparent;
@@ -448,7 +433,7 @@ textarea {
 }
 .badge-done {
   background: var(--done);
-  color: #fff;
+  color: var(--done-ink);
 }
 
 .card {
@@ -616,7 +601,7 @@ textarea {
 }
 .entry-card.is-done .entry-thumb {
   background: var(--done);
-  color: #fff;
+  color: var(--done-ink);
 }
 .entry-thumb img {
   width: 100%;

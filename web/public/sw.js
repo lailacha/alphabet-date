@@ -1,7 +1,7 @@
 // Minimal service worker: caches the app shell so it opens instantly and
 // offline. API calls always go to the network; photos are cached by the
 // browser HTTP cache (they are immutable, versioned URLs).
-const CACHE = 'alphabet-date-v2'
+const CACHE = 'alphabet-date-v3'
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['/', '/manifest.webmanifest', '/icon.svg'])))
