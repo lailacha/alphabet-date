@@ -45,15 +45,32 @@ Les données de la première version (un seul date par lettre) sont reprises aut
 
 Le plan gratuit de Neon (0,5 Go) suffit largement : 52 photos compressées ≈ 20 Mo.
 
-## Dev local
+## Tester en local
+
+Prérequis : [Go 1.24+](https://go.dev/dl/) et [Node.js 22](https://nodejs.org/).
 
 ```bash
-# Postgres local (ou une URL Neon)
-export DATABASE_URL="postgres://postgres@localhost:5432/alphabet?sslmode=disable"
-export APP_PASSWORD=secret        # optionnel en local
+git clone https://github.com/lailacha/alphabet-date.git
+cd alphabet-date
+git checkout claude/pensive-euler-85rmgd
 
-go run ./cmd/dev                  # API sur :8080
-cd web && npm install && npm run dev   # front sur :5173 (proxy /api → :8080)
+cp .env.example .env      # puis remplir DATABASE_URL (l'URL Neon) et APP_PASSWORD
 ```
 
-Pour tester sur le téléphone en local, ouvrir `http://<ip-du-pc>:5173` sur le même Wi-Fi.
+Terminal 1 — l'API Go (lit le fichier `.env`, affiche chaque requête et chaque erreur) :
+
+```bash
+go run ./cmd/dev          # http://localhost:8080
+```
+
+Terminal 2 — le front :
+
+```bash
+cd web
+npm install
+npm run dev               # http://localhost:5173 (les appels /api partent vers :8080)
+```
+
+Ouvrir http://localhost:5173. Pour tester sur le téléphone (même Wi-Fi) : `http://<ip-du-pc>:5173`.
+
+Avec l'URL Neon dans `.env`, le local utilise **la même base que le site en ligne** : pratique pour reproduire un bug, mais les modifications sont réelles.
