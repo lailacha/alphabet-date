@@ -32,8 +32,6 @@ CREATE TABLE IF NOT EXISTS entries (
 	updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS entries_letter_idx ON entries (letter);
--- The date shown on the home tile for its letter (at most one per letter).
-ALTER TABLE entries ADD COLUMN IF NOT EXISTS featured BOOLEAN NOT NULL DEFAULT false;
 -- "Done" no longer requires a date (imported dates were done on unknown days).
 ALTER TABLE entries ADD COLUMN IF NOT EXISTS done BOOLEAN NOT NULL DEFAULT false;
 UPDATE entries SET done = true WHERE done_on IS NOT NULL AND NOT done;
@@ -116,6 +114,10 @@ func DB(ctx context.Context) (*pgxpool.Pool, error) {
 			p.Close()
 			return nil, fmt.Errorf("migrate: %w", err)
 		}
+	}
+	if err := seedOnce(ctx, p); err != nil {
+		p.Close()
+		return nil, fmt.Errorf("seed: %w", err)
 	}
 	pool = p
 	return pool, nil

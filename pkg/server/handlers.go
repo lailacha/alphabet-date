@@ -36,8 +36,6 @@ func NewHandler() http.Handler {
 	mux.Handle("POST /api/entries", protected(handleCreateEntry))
 	mux.Handle("PUT /api/entries/{id}", protected(handleUpdateEntry))
 	mux.Handle("DELETE /api/entries/{id}", protected(handleDeleteEntry))
-	mux.Handle("PUT /api/entries/{id}/featured", protected(handleFeatureEntry))
-	mux.Handle("DELETE /api/entries/{id}/featured", protected(handleFeatureEntry))
 	mux.Handle("PUT /api/entries/{id}/photos/{slot}", protected(handlePutPhoto))
 	mux.Handle("DELETE /api/entries/{id}/photos/{slot}", protected(handleDeletePhoto))
 	mux.Handle("GET /api/photos/{id}/{slot}", protected(handleGetPhoto))

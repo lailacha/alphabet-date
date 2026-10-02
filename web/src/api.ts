@@ -8,8 +8,6 @@ export type Entry = {
   done: boolean
   /** Optional: the day it was done. */
   doneOn: string | null
-  /** Shown on the home tile for its letter. */
-  featured: boolean
   photos: [string | null, string | null]
   createdAt: string
 }
@@ -82,8 +80,6 @@ export const api = {
   createEntry: (letter: string, e: EntryInput) =>
     request<{ id: number }>('/entries', json('POST', { letter, ...e })),
   updateEntry: (id: number, e: EntryInput) => request<void>(`/entries/${id}`, json('PUT', e)),
-  setFeatured: (id: number, on: boolean) =>
-    request<void>(`/entries/${id}/featured`, { method: on ? 'PUT' : 'DELETE' }),
   deleteEntry: (id: number) => request<void>(`/entries/${id}`, { method: 'DELETE' }),
   uploadPhoto: (id: number, slot: 1 | 2, blob: Blob) =>
     request<void>(`/entries/${id}/photos/${slot}`, {

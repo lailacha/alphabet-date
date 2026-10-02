@@ -8,13 +8,11 @@ type Props = {
   letter: string
   /** null = creating a new date for this letter */
   entry: Entry | null
-  /** All dates of this letter, this one included. */
-  siblings: Entry[]
   settings: Settings
   onChanged: () => Promise<void>
 }
 
-export default function EntryPage({ letter, entry, siblings, settings, onChanged }: Props) {
+export default function EntryPage({ letter, entry, settings, onChanged }: Props) {
   const [editing, setEditing] = useState(!entry)
   const [viewer, setViewer] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -60,13 +58,6 @@ export default function EntryPage({ letter, entry, siblings, settings, onChanged
       await onChanged()
     })
 
-  const toggleFeatured = () =>
-    run(async () => {
-      if (!entry) return
-      await api.setFeatured(entry.id, !entry.featured)
-      await onChanged()
-    })
-
   const remove = () =>
     run(async () => {
       if (!entry || !confirm(`Supprimer « ${entry.idea} » et ses photos ?`)) return
@@ -88,25 +79,6 @@ export default function EntryPage({ letter, entry, siblings, settings, onChanged
           <span className="badge">Nouveau</span>
         )}
       </header>
-
-      {entry && (
-        <nav className="entry-links">
-          {siblings.length > 1 ? (
-            <button className="link" onClick={() => navigate(letter, { replace: true })}>
-              Voir les {siblings.length} dates en {letter}
-            </button>
-          ) : (
-            <button className="link" onClick={() => navigate(`${letter}/nouveau`)}>
-              ＋ Ajouter un autre date en {letter}
-            </button>
-          )}
-          {siblings.length > 1 && (
-            <button className={`chip ${entry.featured ? 'chip-on' : ''}`} onClick={toggleFeatured} aria-pressed={entry.featured}>
-              {entry.featured ? '★ Mis en avant' : '☆ Mettre en avant'}
-            </button>
-          )}
-        </nav>
-      )}
 
       {editing ? (
         <form className="card form" action={save}>

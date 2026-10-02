@@ -101,10 +101,15 @@ export default function Home({ entries, settings }: { entries: Entry[]; settings
 function Tile({ summary }: { summary: LetterSummary }) {
   const { letter, entries, done, isDone, lead, cover } = summary
   const state = isDone ? 'done' : lead ? 'planned' : 'empty'
-  const label = !lead ? 'À imaginer' : entries.length > 1 ? `${lead.idea} +${entries.length - 1}` : lead.idea
-  // A letter with dates opens its featured (or first) date directly.
+  const label = !lead
+    ? 'À imaginer'
+    : entries.length === 1
+      ? lead.idea
+      : isDone
+        ? `${lead.idea} +${entries.length - 1}`
+        : `${entries.length} idées`
   return (
-    <button className={`tile tile-${state}`} onClick={() => navigate(lead ? `${letter}/${lead.id}` : letter)}>
+    <button className={`tile tile-${state}`} onClick={() => navigate(letter)}>
       {cover && <img src={cover} alt="" loading="lazy" decoding="async" />}
       <span className="tile-letter">{letter}</span>
       <span className="tile-label">{label}</span>

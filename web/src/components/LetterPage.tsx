@@ -48,10 +48,7 @@ export default function LetterPage({ letter, entries }: { letter: string; entrie
                     {cover ? <img src={cover} alt="" loading="lazy" /> : <span>{e.done ? '✓' : letter}</span>}
                   </span>
                   <span className="entry-text">
-                    <strong>
-                      {e.featured && <span className="star" aria-label="Mis en avant">★ </span>}
-                      {e.idea || 'Sans titre'}
-                    </strong>
+                    <strong>{e.idea || 'Sans titre'}</strong>
                     <span className="muted small">
                       {e.done ? (e.doneOn ? `✓ ${formatDate(e.doneOn)}` : '✓ Fait') : 'À faire'}
                       {e.place && ` · ${e.place}`}

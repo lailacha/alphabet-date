@@ -63,10 +63,7 @@ export default function App() {
     if (!m[2]) return <LetterPage key={letter} letter={letter} entries={entries} />
     const entry = m[2] === 'nouveau' ? null : entries.find((e) => e.id === Number(m[2]))
     if (entry !== undefined) {
-      const siblings = entries.filter((e) => e.letter === letter)
-      return (
-        <EntryPage key={m[2]} letter={letter} entry={entry} siblings={siblings} settings={settings} onChanged={refresh} />
-      )
+      return <EntryPage key={m[2]} letter={letter} entry={entry} settings={settings} onChanged={refresh} />
     }
   }
 
