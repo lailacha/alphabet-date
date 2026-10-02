@@ -16,6 +16,13 @@ const cookieName = "ad_session"
 // APP_PASSWORD logs everybody out.
 func password() string { return os.Getenv("APP_PASSWORD") }
 
+// openAccess: without APP_PASSWORD the app is open, but only locally. On
+// Vercel a missing password locks everything instead of exposing the photos.
+func openAccess() bool { return password() == "" && os.Getenv("VERCEL") == "" }
+
+// misconfigured: deployed without a password, nobody can log in.
+func misconfigured() bool { return password() == "" && os.Getenv("VERCEL") != "" }
+
 func sessionToken() string {
 	secret := os.Getenv("SESSION_SECRET")
 	if secret == "" {
@@ -27,8 +34,11 @@ func sessionToken() string {
 }
 
 func authenticated(r *http.Request) bool {
-	if password() == "" {
+	if openAccess() {
 		return true // no password configured (local dev)
+	}
+	if misconfigured() {
+		return false
 	}
 	c, err := r.Cookie(cookieName)
 	if err != nil {

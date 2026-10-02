@@ -73,7 +73,7 @@ func protected(h http.HandlerFunc) http.Handler {
 func handleMe(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]bool{
 		"authenticated":    authenticated(r),
-		"passwordRequired": password() != "",
+		"passwordRequired": !openAccess(),
 	})
 }
 
@@ -85,7 +85,11 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, "requête invalide")
 		return
 	}
-	if password() != "" && !checkPassword(body.Password) {
+	if misconfigured() {
+		writeErr(w, http.StatusServiceUnavailable, "APP_PASSWORD n'est pas configuré sur Vercel (Settings → Environment Variables)")
+		return
+	}
+	if !openAccess() && !checkPassword(body.Password) {
 		writeErr(w, http.StatusUnauthorized, "mot de passe incorrect")
 		return
 	}
