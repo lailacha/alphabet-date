@@ -13,7 +13,7 @@ export const surprise = {
     "Il nous reste encore plein de lettres à vivre ensemble, alors je t'ai fait une petite appli pour toutes les garder: nos idées, nos souvenirs, et chaque photo que l'on prend!",
     "Merci d'être celle que tu es ❤️",
     "Joyeux 6 mois mon cœur (même si je sais que t'aimes pas) ❤️",
-    "Je t'aime",
+    "Je t'aime fort",
   ],
   button: 'Ouvrir notre alphabet',
 }
