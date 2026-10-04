@@ -10,5 +10,18 @@ createRoot(document.getElementById('root')!).render(
 )
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  navigator.serviceWorker.register('/sw.js')
+  navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((reg) => {
+    // Phones keep installed apps open for days: look for a new version
+    // whenever the app comes back to the foreground.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') reg.update()
+    })
+  })
+  // A new version took over: reload once to show it.
+  let reloaded = false
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloaded) return
+    reloaded = true
+    location.reload()
+  })
 }
