@@ -68,8 +68,14 @@ export default function Surprise({ onDone }: { onDone: () => void }) {
               {line}
             </p>
           ))}
-          <p className="love-from">— {surprise.from}</p>
-          <button className="btn btn-primary" onClick={onDone}>
+          <p className="love-from" style={{ animationDelay: `${0.35 + surprise.message.length * 0.25}s` }}>
+            — {surprise.from}
+          </p>
+          <button
+            className="btn btn-primary"
+            onClick={onDone}
+            style={{ animationDelay: `${0.65 + surprise.message.length * 0.25}s` }}
+          >
             {surprise.button}
           </button>
         </article>
