@@ -57,10 +57,6 @@ export default function SettingsPage({ settings, onSaved, onReplaySurprise, onLo
       </form>
 
       <section className="card">
-        <p className="muted small">
-          Astuce : sur iPhone, ouvrez l'app dans Safari puis Partager → « Sur l'écran d'accueil ». Sur Android, menu ⋮ →
-          « Installer l'application ».
-        </p>
         <div className="form-actions">
           <button className="btn" onClick={onReplaySurprise}>
             🎁 Revoir la surprise
