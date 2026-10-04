@@ -68,7 +68,7 @@ export default function Surprise({ onDone }: { onDone: () => void }) {
 
       {stage !== 'open' && (
         <button className="gift-wrap" onClick={open} aria-label="Ouvrir le cadeau">
-          <p className="gift-to">Pour toi, {surprise.to}</p>
+          <p className="gift-to">Pour toi, {surprise.nickname}</p>
           <span className="gift">
             <span className="gift-lid" />
             <span className="gift-body" />

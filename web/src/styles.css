@@ -325,6 +325,7 @@ textarea {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: top;
 }
 .tile-letter,
 .tile-label,
@@ -501,7 +502,7 @@ textarea {
 .photo {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 3 / 4;
   border: none;
   padding: 0;
   border-radius: var(--radius);
@@ -603,6 +604,7 @@ textarea {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: top; /* photos are split top/bottom: avoid cropping on the seam */
 }
 .entry-text {
   flex: 1;
@@ -883,4 +885,6 @@ textarea {
 }
 .photo:has(img) img {
   height: auto;
+  max-height: 85vh;
+  object-fit: contain;
 }

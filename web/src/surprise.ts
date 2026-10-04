@@ -3,6 +3,8 @@
 
 export const surprise = {
   to: 'Anaïs',
+  /** Shown on the gift box: « Pour toi, poupée ». */
+  nickname: 'poupée',
   from: 'Laïla',
   title: 'Joyeux 6 mois',
   message: [
