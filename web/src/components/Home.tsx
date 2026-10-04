@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Entry, Settings } from '../api'
 import { summarize, type LetterSummary } from '../letters'
+import TogetherCard from './Together'
 import { navigate } from '../useHashRoute'
 
 type Filter = 'all' | 'done' | 'todo'
@@ -55,10 +56,17 @@ export default function Home({ entries, settings }: { entries: Entry[]; settings
             {settings.person1} &amp; {settings.person2}
           </p>
         </div>
-        <button className="icon-btn" aria-label="Réglages" onClick={() => navigate('reglages')}>
-          <GearIcon />
-        </button>
+        <div className="header-actions">
+          <button className="icon-btn" aria-label="Nos souvenirs" onClick={() => navigate('album')}>
+            📷
+          </button>
+          <button className="icon-btn" aria-label="Réglages" onClick={() => navigate('reglages')}>
+            <GearIcon />
+          </button>
+        </div>
       </header>
+
+      <TogetherCard since={settings.since} />
 
       <Progress done={done.length} total={letters.length} datesDone={datesDone} />
 

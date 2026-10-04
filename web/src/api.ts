@@ -14,7 +14,7 @@ export type Entry = {
 
 export type EntryInput = Pick<Entry, 'idea' | 'place' | 'notes' | 'done' | 'doneOn'>
 
-export type Settings = { person1: string; person2: string }
+export type Settings = { person1: string; person2: string; since: string }
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {

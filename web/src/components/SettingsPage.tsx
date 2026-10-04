@@ -15,6 +15,7 @@ export default function SettingsPage({ settings, onSaved, onReplaySurprise, onLo
       await api.saveSettings({
         person1: String(form.get('person1') ?? ''),
         person2: String(form.get('person2') ?? ''),
+        since: String(form.get('since') ?? ''),
       })
       await onSaved()
       return 'Enregistré ✓'
@@ -42,6 +43,10 @@ export default function SettingsPage({ settings, onSaved, onReplaySurprise, onLo
         <label>
           Prénom 2
           <input name="person2" defaultValue={settings.person2} required />
+        </label>
+        <label>
+          Ensemble depuis
+          <input name="since" type="date" defaultValue={settings.since} />
         </label>
         {state && <p className="muted small">{state}</p>}
         <div className="form-actions">

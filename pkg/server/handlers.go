@@ -7,11 +7,13 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Settings struct {
 	Person1 string `json:"person1"`
 	Person2 string `json:"person2"`
+	Since   string `json:"since"` // start of the relationship, YYYY-MM-DD or ""
 }
 
 // NewHandler returns the full API router. Paths are all under /api.
@@ -126,6 +128,8 @@ func handleGetSettings(w http.ResponseWriter, r *http.Request) {
 			s.Person1 = v
 		case "person2":
 			s.Person2 = v
+		case "since":
+			s.Since = v
 		}
 	}
 	writeJSON(w, http.StatusOK, s)
@@ -142,9 +146,16 @@ func handlePutSettings(w http.ResponseWriter, r *http.Request) {
 		serverErr(w, err)
 		return
 	}
-	for k, v := range map[string]string{"person1": s.Person1, "person2": s.Person2} {
+	s.Since = strings.TrimSpace(s.Since)
+	if s.Since != "" {
+		if _, err := time.Parse("2006-01-02", s.Since); err != nil {
+			writeErr(w, http.StatusBadRequest, "date invalide (AAAA-MM-JJ)")
+			return
+		}
+	}
+	for k, v := range map[string]string{"person1": s.Person1, "person2": s.Person2, "since": s.Since} {
 		v = strings.TrimSpace(v)
-		if v == "" {
+		if v == "" && k != "since" {
 			continue
 		}
 		if _, err := db.Exec(r.Context(),

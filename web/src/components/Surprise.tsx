@@ -1,34 +1,12 @@
-import { useMemo, useState, type CSSProperties } from 'react'
+import { useMemo, useState } from 'react'
+import Burst from './Burst'
 import { surprise } from '../surprise'
 
 type Stage = 'closed' | 'opening' | 'open'
 
-const BURST = ['❤', '💗', '💖', '✨', '❤', '💕']
-const CONFETTI = ['#e0607e', '#f29a8e', '#f2c46d', '#f6e9e4', '#c084fc', '#6cc9a1']
-
 export default function Surprise({ onDone }: { onDone: () => void }) {
   const [stage, setStage] = useState<Stage>('closed')
 
-  // Random trajectories, computed once so they don't jump on re-render.
-  const particles = useMemo(
-    () =>
-      Array.from({ length: 46 }, (_, i) => {
-        const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.4
-        const dist = 120 + Math.random() * 220
-        return {
-          id: i,
-          heart: i % 3 === 0,
-          glyph: BURST[i % BURST.length],
-          color: CONFETTI[i % CONFETTI.length],
-          x: Math.cos(angle) * dist,
-          y: Math.sin(angle) * dist,
-          r: (Math.random() - 0.5) * 720,
-          delay: Math.random() * 0.15,
-          size: 0.8 + Math.random() * 0.9,
-        }
-      }),
-    [],
-  )
   const floaters = useMemo(
     () =>
       Array.from({ length: 14 }, (_, i) => ({
@@ -78,29 +56,7 @@ export default function Surprise({ onDone }: { onDone: () => void }) {
         </button>
       )}
 
-      {stage !== 'closed' && (
-        <div className="burst" aria-hidden>
-          {particles.map((p) => (
-            <span
-              key={p.id}
-              className={p.heart ? 'burst-heart' : 'burst-confetti'}
-              style={
-                {
-                  '--x': `${p.x}px`,
-                  '--y': `${p.y}px`,
-                  '--r': `${p.r}deg`,
-                  '--s': p.size,
-                  animationDelay: `${p.delay}s`,
-                  background: p.heart ? undefined : p.color,
-                  color: p.heart ? p.color : undefined,
-                } as CSSProperties
-              }
-            >
-              {p.heart ? p.glyph : ''}
-            </span>
-          ))}
-        </div>
-      )}
+      {stage !== 'closed' && <Burst delay={0.4} />}
 
       {stage === 'open' && (
         <article className="love-card">
