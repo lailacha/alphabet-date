@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Entry, Settings } from '../api'
 import { summarize, type LetterSummary } from '../letters'
 import TogetherCard from './Together'
+import SplitPhoto from './SplitPhoto'
 import { navigate } from '../useHashRoute'
 
 type Filter = 'all' | 'done' | 'todo'
@@ -118,7 +119,7 @@ function Tile({ summary }: { summary: LetterSummary }) {
         : `${entries.length} idées`
   return (
     <button className={`tile tile-${state}`} onClick={() => navigate(letter)}>
-      {cover && <img src={cover} alt="" loading="lazy" decoding="async" />}
+      {cover && <SplitPhoto src={cover} />}
       <span className="tile-letter">{letter}</span>
       <span className="tile-label">{label}</span>
       {isDone && (

@@ -1,6 +1,7 @@
 import type { Entry } from '../api'
 import { formatDate, LETTERS } from '../letters'
 import { goBack, navigate } from '../useHashRoute'
+import SplitPhoto from './SplitPhoto'
 
 export default function LetterPage({ letter, entries }: { letter: string; entries: Entry[] }) {
   const mine = entries.filter((e) => e.letter === letter)
@@ -45,7 +46,7 @@ export default function LetterPage({ letter, entries }: { letter: string; entrie
               <li key={e.id}>
                 <button className={`entry-card ${e.done ? 'is-done' : ''}`} onClick={() => navigate(`${letter}/${e.id}`)}>
                   <span className="entry-thumb">
-                    {cover ? <img src={cover} alt="" loading="lazy" /> : <span>{e.done ? '✓' : letter}</span>}
+                    {cover ? <SplitPhoto src={cover} /> : <span>{e.done ? '✓' : letter}</span>}
                   </span>
                   <span className="entry-text">
                     <strong>{e.idea || 'Sans titre'}</strong>

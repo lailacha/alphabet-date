@@ -319,13 +319,9 @@ textarea {
 .tile:active {
   transform: scale(0.96);
 }
-.tile img {
+.tile .split-photo {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top;
 }
 .tile-letter,
 .tile-label,
@@ -377,7 +373,7 @@ textarea {
   background: var(--accent);
   color: #fff;
 }
-.tile-done:has(img)::after {
+.tile-done:has(.split-photo)::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -600,11 +596,12 @@ textarea {
   background: var(--done);
   color: var(--done-ink);
 }
-.entry-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top; /* photos are split top/bottom: avoid cropping on the seam */
+.entry-thumb {
+  position: relative;
+}
+.entry-thumb .split-photo {
+  position: absolute;
+  inset: 0;
 }
 .entry-text {
   flex: 1;
@@ -1108,4 +1105,29 @@ textarea {
   right: 12px;
   display: flex;
   gap: 0.5rem;
+}
+
+/* Two stacked pictures shown side by side (see SplitPhoto.tsx) */
+.split-photo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  background: var(--bg);
+}
+.split-photo > span {
+  position: relative;
+  overflow: hidden;
+}
+.split-photo img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 200%; /* the whole collage; each column shows one half */
+  object-fit: cover;
+  object-position: center top;
+}
+.split-photo img.split-bottom {
+  top: -100%;
+  object-position: center bottom;
 }
