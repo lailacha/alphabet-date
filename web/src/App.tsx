@@ -6,6 +6,8 @@ import Home from './components/Home'
 import LetterPage from './components/LetterPage'
 import EntryPage from './components/EntryPage'
 import SettingsPage from './components/SettingsPage'
+import Surprise from './components/Surprise'
+import { markSurpriseSeen, surpriseSeen } from './surprise'
 
 type Auth = 'loading' | 'in' | 'out'
 
@@ -15,6 +17,7 @@ export default function App() {
   const [entries, setEntries] = useState<Entry[] | null>(null)
   const [settings, setSettings] = useState<Settings>({ person1: 'Anaïs', person2: 'Laïla' })
   const [error, setError] = useState<string | null>(null)
+  const [showSurprise, setShowSurprise] = useState(() => !surpriseSeen())
 
   const refresh = useCallback(async () => {
     try {
@@ -41,6 +44,16 @@ export default function App() {
 
   if (auth === 'loading') return <Splash />
   if (auth === 'out') return <Login onLoggedIn={() => setAuth('in')} />
+  if (showSurprise) {
+    return (
+      <Surprise
+        onDone={() => {
+          markSurpriseSeen()
+          setShowSurprise(false)
+        }}
+      />
+    )
+  }
   if (!entries) return error ? <ErrorScreen message={error} onRetry={refresh} /> : <Splash />
 
   if (route === 'reglages') {
@@ -48,6 +61,10 @@ export default function App() {
       <SettingsPage
         settings={settings}
         onSaved={refresh}
+        onReplaySurprise={() => {
+          markSurpriseSeen(false)
+          setShowSurprise(true)
+        }}
         onLoggedOut={() => {
           setEntries(null)
           setAuth('out')
@@ -63,7 +80,7 @@ export default function App() {
     if (!m[2]) return <LetterPage key={letter} letter={letter} entries={entries} />
     const entry = m[2] === 'nouveau' ? null : entries.find((e) => e.id === Number(m[2]))
     if (entry !== undefined) {
-      return <EntryPage key={m[2]} letter={letter} entry={entry} settings={settings} onChanged={refresh} />
+      return <EntryPage key={m[2]} letter={letter} entry={entry} onChanged={refresh} />
     }
   }
 

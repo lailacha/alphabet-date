@@ -1,5 +1,5 @@
 import { useActionState, useEffect, useRef, useState } from 'react'
-import { api, type Entry, type EntryInput, type Settings } from '../api'
+import { api, type Entry, type EntryInput } from '../api'
 import { compressImage } from '../image'
 import { formatDate, today } from '../letters'
 import { goBack, navigate } from '../useHashRoute'
@@ -8,11 +8,10 @@ type Props = {
   letter: string
   /** null = creating a new date for this letter */
   entry: Entry | null
-  settings: Settings
   onChanged: () => Promise<void>
 }
 
-export default function EntryPage({ letter, entry, settings, onChanged }: Props) {
+export default function EntryPage({ letter, entry, onChanged }: Props) {
   const [editing, setEditing] = useState(!entry)
   const [viewer, setViewer] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -141,11 +140,10 @@ export default function EntryPage({ letter, entry, settings, onChanged }: Props)
       {entry && (
         <>
           <section className="photos">
-            <h2>Nos photos</h2>
-            <div className="photo-pair">
-              <PhotoSlot entry={entry} slot={1} label={`${settings.person2} par ${settings.person1}`} onChanged={onChanged} onOpen={setViewer} />
-              <PhotoSlot entry={entry} slot={2} label={`${settings.person1} par ${settings.person2}`} onChanged={onChanged} onOpen={setViewer} />
-            </div>
+            <h2>Notre photo</h2>
+            <PhotoSlot entry={entry} slot={1} onChanged={onChanged} onOpen={setViewer} />
+            {/* Dates from before the switch to a single photo may still have a 2nd one. */}
+            {entry.photos[1] && <PhotoSlot entry={entry} slot={2} onChanged={onChanged} onOpen={setViewer} />}
           </section>
 
           <div className="form-actions danger-zone">
@@ -168,12 +166,11 @@ export default function EntryPage({ letter, entry, settings, onChanged }: Props)
 type SlotProps = {
   entry: Entry
   slot: 1 | 2
-  label: string
   onChanged: () => Promise<void>
   onOpen: (url: string) => void
 }
 
-function PhotoSlot({ entry, slot, label, onChanged, onOpen }: SlotProps) {
+function PhotoSlot({ entry, slot, onChanged, onOpen }: SlotProps) {
   const input = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -217,15 +214,14 @@ function PhotoSlot({ entry, slot, label, onChanged, onOpen }: SlotProps) {
     <figure className={`photo-slot ${busy ? 'busy' : ''}`}>
       {src ? (
         <button className="photo" onClick={() => url && onOpen(url)}>
-          <img src={src} alt={label} />
+          <img src={src} alt={entry.idea} />
         </button>
       ) : (
         <button className="photo photo-empty" onClick={() => input.current?.click()} disabled={busy}>
           <span className="plus">＋</span>
-          <span>Ajouter</span>
+          <span>Ajouter notre photo</span>
         </button>
       )}
-      <figcaption>{label}</figcaption>
       {url && !busy && (
         <div className="photo-actions">
           <button className="link" onClick={() => input.current?.click()}>

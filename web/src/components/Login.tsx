@@ -27,6 +27,7 @@ export default function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
             autoFocus
             required
           />
+          <p className="login-hint">💡 Indice : ton plat préféré</p>
           <button className="btn btn-primary" disabled={pending}>
             {pending ? '…' : 'Entrer'}
           </button>

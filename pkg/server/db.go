@@ -43,6 +43,9 @@ CREATE TABLE IF NOT EXISTS entry_photos (
 	updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 	PRIMARY KEY (entry_id, slot)
 );
+-- One photo per date now: a lone 2nd photo becomes the photo.
+UPDATE entry_photos p SET slot = 1
+WHERE slot = 2 AND NOT EXISTS (SELECT 1 FROM entry_photos q WHERE q.entry_id = p.entry_id AND q.slot = 1);
 CREATE TABLE IF NOT EXISTS settings (
 	key   TEXT PRIMARY KEY,
 	value TEXT NOT NULL
